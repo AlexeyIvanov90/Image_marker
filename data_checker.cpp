@@ -65,35 +65,54 @@ void verification_error_CNN(std::string file_csv, std::string new_csv) {
 }
 
 
-//verification data set (singl class, not lable)
-void verification_single_data_set(std::string file_csv, std::string new_csv) {
+void verification_single_data_set(std::string file_csv) {
+	std::filesystem::path path_csv(file_csv);
 
-	std::fstream in(file_csv, std::ios::in);
-	std::fstream out(new_csv, std::ios::in);
+	std::string root_path =	path_csv.string().erase(path_csv.string().find(
+		path_csv.filename().string()), path_csv.filename().string().length());
+
+	std::string new_csv = root_path + "new_" + path_csv.filename().string();
+	std::string delete_csv = root_path + "delete_" + path_csv.filename().string();
+
+	std::fstream in_csv(file_csv, std::ios::in);
+	std::fstream out_new_csv(new_csv, std::ios::in);
+	std::fstream out_delete_csv(delete_csv, std::ios::in);
 
 	std::string line;
-	std::string last_line;
+	std::string last_line_new_csv;
+	std::string last_line_delete_csv;
 
 	std::vector<std::string> data;
 
-	while (getline(out, line))
-		last_line = line;
-	out.close();
+	while (getline(out_new_csv, line))
+		last_line_new_csv = line;
+	out_new_csv.close();
 
-	bool write_mode = false;
+	while (getline(out_delete_csv, line))
+		last_line_delete_csv = line;
+	out_new_csv.close();
 
-	if (last_line.empty())
-		write_mode = true;
+	bool found_last_line_new = false;
+	bool found_last_line_delete = false;
 
-	while (getline(in, line)) {
-		if (write_mode)
+	if (last_line_new_csv.empty())
+		found_last_line_new = true;
+
+	if (last_line_delete_csv.empty())
+		found_last_line_delete = true;
+
+	while (getline(in_csv, line)) {
+		if (found_last_line_new && found_last_line_delete)
 			data.push_back(line);
 
-		if (!write_mode && line == last_line)
-			write_mode = true;
+		if (line == last_line_new_csv)
+			found_last_line_new = true;
+
+		if (line == last_line_delete_csv)
+			found_last_line_delete = true;
 	}
 
-	in.close();
+	in_csv.close();
 
 	for each (auto path in data)
 	{
@@ -120,10 +139,15 @@ void verification_single_data_set(std::string file_csv, std::string new_csv) {
 			out << path + "\n";
 		out.close();
 		}
-		else 
+		else {
 			std::cout << "img delete from .csv" << std::endl;
+			std::ofstream out;
+			out.open(delete_csv, std::ios::app);
+			if (out.is_open())
+				out << path + "\n";
+			out.close();
+		}
 	}
-
 }
 
 
